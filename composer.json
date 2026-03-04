@@ -1,0 +1,49 @@
+{
+    "name": "leadm/leadmail",
+    "description": "Laravel SDK for leadMail email sending and verification service",
+    "type": "library",
+    "license": "MIT",
+    "homepage": "https://github.com/leadmnik/leadmail-sdk",
+    "authors": [
+        {
+            "name": "Lead Magnet Oy",
+            "homepage": "https://leadmagnet.fi"
+        }
+    ],
+    "support": {
+        "issues": "https://github.com/leadmnik/leadmail-sdk/issues",
+        "source": "https://github.com/leadmnik/leadmail-sdk"
+    },
+    "require": {
+        "php": "^8.2",
+        "guzzlehttp/guzzle": "^7.0",
+        "illuminate/mail": "^11.0|^12.0",
+        "illuminate/support": "^11.0|^12.0"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^9.0|^10.0",
+        "pestphp/pest": "^3.0|^4.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "LeadM\\LeadMail\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "LeadM\\LeadMail\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "LeadM\\LeadMail\\LeadMailServiceProvider"
+            ],
+            "aliases": {
+                "LeadMail": "LeadM\\LeadMail\\LeadMailFacade"
+            }
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}

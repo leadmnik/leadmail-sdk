@@ -13,6 +13,10 @@ class LeadMailServiceProvider extends ServiceProvider
     {
         $this->mergeConfigFrom(__DIR__.'/../config/leadmail.php', 'leadmail');
 
+        $this->app->booted(function () {
+            config(['mail.mailers.leadmail' => ['transport' => 'leadmail']]);
+        });
+
         $this->app->singleton(LeadMailClient::class, function () {
             return new LeadMailClient(
                 baseUrl: config('leadmail.url'),

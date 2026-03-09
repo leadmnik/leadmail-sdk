@@ -44,13 +44,8 @@ class LeadMailServiceProvider extends ServiceProvider
 
         Validator::extend('leadmail_verify', function (string $attribute, mixed $value) {
             $rule = $this->app->make(LeadMailVerify::class);
-            $passed = true;
 
-            $rule->validate($attribute, $value, function () use (&$passed) {
-                $passed = false;
-            });
-
-            return $passed;
+            return $rule->passes($attribute, $value);
         }, 'The :attribute email address could not be verified.');
     }
 }

@@ -5,7 +5,7 @@ Laravel package for sending emails and verifying email addresses through the [le
 ## Requirements
 
 - PHP 8.2+
-- Laravel 11 or 12
+- Laravel 11, 12, or 13
 
 ## Installation
 

@@ -34,6 +34,15 @@ Optional settings:
 LEADMAIL_TIMEOUT=30
 LEADMAIL_VERIFY_SSL=true
 LEADMAIL_AUTO_TENANT=true
+
+# Retry transient failures (connection errors, 429/5xx) on idempotent calls.
+# Sends are never retried automatically, to avoid duplicate emails.
+LEADMAIL_RETRIES=2
+LEADMAIL_RETRY_DELAY_MS=200
+
+# Required only if you receive failure webhooks. Must match the webhook secret
+# shown for this client app in the leadMail admin dashboard.
+LEADMAIL_WEBHOOK_SECRET=whsec_...
 ```
 
 ## Usage
@@ -92,6 +101,85 @@ public function rules(): array
 $domains = LeadMail::getDomains();
 // ['yourdomain.com', 'anotherdomain.com']
 ```
+
+## Error Handling
+
+Every API failure is raised as a typed exception so you can handle it reliably from the client side. `LeadMail::verifyEmail()` is the exception — it fails open (returns `status: "unknown"`) so a verification outage never blocks sign-ups.
+
+| Exception | When |
+|-----------|------|
+| `LeadM\LeadMail\Exceptions\LeadMailRequestException` | The service returned an error response (4xx/5xx). |
+| `LeadM\LeadMail\Exceptions\LeadMailConnectionException` | The service could not be reached (DNS/connection/timeout). |
+| `LeadM\LeadMail\Exceptions\LeadMailException` | Base class for both of the above; catch this to handle any failure. |
+
+```php
+use LeadM\LeadMail\Exceptions\LeadMailRequestException;
+use LeadM\LeadMail\Exceptions\LeadMailConnectionException;
+
+try {
+    LeadMail::sendEmail([...]);
+} catch (LeadMailRequestException $e) {
+    $e->statusCode();        // e.g. 422, 502
+    $e->errorCode();         // e.g. "TRANSPORT_ERROR" (from the API envelope)
+    $e->logId();             // the email log id, when available
+    $e->validationErrors();  // ['from.email' => ['...']] on a 422
+    $e->isValidationError();
+    $e->isAuthenticationError();
+} catch (LeadMailConnectionException $e) {
+    // Service unreachable — safe to queue and retry yourself.
+}
+```
+
+Idempotent calls (`getDomains`, `verifyEmail`) automatically retry transient failures (connection errors and `429`/`5xx`) with exponential backoff. **Sends are never retried automatically** — a retry after a dropped connection could deliver the same email twice. Retry sends yourself via a queued job if you need to.
+
+## Receiving Failure Webhooks
+
+leadMail POSTs a signed `email.failed` webhook to your app when a send ultimately fails. **This works out of the box — no route or config required.**
+
+### Setup: one command
+
+With `LEADMAIL_TOKEN` set in your `.env`, run:
+
+```bash
+php artisan leadmail:install
+```
+
+It runs without prompts (safe for Ploi/CI) and:
+
+1. publishes the config,
+2. registers your webhook URL with the leadMail service over the API (authenticated by your token), derived from `APP_URL` + the configured webhook route,
+3. writes the generated `LEADMAIL_WEBHOOK_SECRET` into your `.env`.
+
+That's it. The SDK **auto-registers the receiving route** (`/webhooks/leadmail` by default), which verifies the HMAC signature and **logs every failure by default**. Nothing else to wire up.
+
+Options:
+
+- `--url=https://your-app.com/custom/path` — override the derived URL.
+- `--rotate` — generate and store a fresh signing secret.
+
+The secret is generated server-side and returned only once, at registration.
+
+### Custom handling
+
+To do more than log (e.g. flag a contact, alert a channel), listen for the `LeadMailWebhookReceived` event:
+
+```php
+use LeadM\LeadMail\Events\LeadMailWebhookReceived;
+
+Event::listen(function (LeadMailWebhookReceived $received) {
+    $event = $received->event;
+
+    if ($event->isFailure()) {
+        // $event->logId, $event->errorCode, $event->errorMessage,
+        // $event->from, $event->to, $event->subject, $event->metadata
+    }
+});
+```
+
+### Customising or replacing the route
+
+- `LEADMAIL_WEBHOOK_ROUTE` — change the path (keep it in sync with the registered URL via `leadmail:install`).
+- Set `leadmail.webhook_route` to `null` to disable auto-registration and handle the request yourself with `LeadMailWebhook::parse($request)` (verifies the signature against the raw body, throws `InvalidWebhookSignatureException` on mismatch; `verify()` returns a boolean instead).
 
 ## Multi-Tenancy
 

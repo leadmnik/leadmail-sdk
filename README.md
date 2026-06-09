@@ -13,22 +13,35 @@ Laravel package for sending emails and verifying email addresses through the [le
 composer require leadm/leadmail
 ```
 
-Publish the config file:
-
-```bash
-php artisan vendor:publish --provider="LeadM\LeadMail\LeadMailServiceProvider"
-```
-
-## Configuration
-
 Add these to your `.env`:
 
 ```env
 LEADMAIL_URL=https://mail.leadmagnet.dev
 LEADMAIL_TOKEN=lm_your_api_token_here
+MAIL_MAILER=leadmail
 ```
 
-Optional settings:
+Then run the installer:
+
+```bash
+php artisan leadmail:install
+```
+
+That's the whole setup. The command publishes the config, registers this app's
+failure-webhook URL with the service, and writes the generated
+`LEADMAIL_WEBHOOK_SECRET` into your `.env` — no secret to copy by hand. It runs
+without prompts, so it's safe in CI/Ploi deploy hooks. See
+[Receiving Failure Webhooks](#receiving-failure-webhooks) for what it wires up.
+
+> If you only need sending/verification and not webhooks, you can skip the
+> installer and just publish the config with
+> `php artisan vendor:publish --tag=leadmail-config`.
+
+## Configuration
+
+Everything is configured by environment variables; the published
+`config/leadmail.php` reads from them. All of these are optional and have
+sensible defaults:
 
 ```env
 LEADMAIL_TIMEOUT=30
@@ -40,9 +53,10 @@ LEADMAIL_AUTO_TENANT=true
 LEADMAIL_RETRIES=2
 LEADMAIL_RETRY_DELAY_MS=200
 
-# Required only if you receive failure webhooks. Must match the webhook secret
-# shown for this client app in the leadMail admin dashboard.
+# Set automatically by `php artisan leadmail:install` — you normally don't edit
+# these by hand. The secret signs incoming webhooks; the route is where they land.
 LEADMAIL_WEBHOOK_SECRET=whsec_...
+LEADMAIL_WEBHOOK_ROUTE=/webhooks/leadmail
 ```
 
 ## Usage

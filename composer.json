@@ -3,7 +3,7 @@
     "description": "Laravel SDK for leadMail email sending and verification service",
     "type": "library",
     "license": "MIT",
-    "homepage": "https://git.leadmagnet.dev/LeadMagnet/leadmail-sdk",
+    "homepage": "https://github.com/leadmnik/leadmail-sdk",
     "authors": [
         {
             "name": "Lead Magnet Oy",
@@ -11,8 +11,8 @@
         }
     ],
     "support": {
-        "issues": "https://git.leadmagnet.dev/LeadMagnet/leadmail-sdk/issues",
-        "source": "https://git.leadmagnet.dev/LeadMagnet/leadmail-sdk"
+        "issues": "https://github.com/leadmnik/leadmail-sdk/issues",
+        "source": "https://github.com/leadmnik/leadmail-sdk"
     },
     "require": {
         "php": "^8.2",

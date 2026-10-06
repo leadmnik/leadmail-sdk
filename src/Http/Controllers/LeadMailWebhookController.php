@@ -11,8 +11,9 @@ use LeadM\LeadMail\Webhooks\LeadMailWebhook;
 
 /**
  * Default receiver for LeadMail webhooks, auto-registered by the service
- * provider. Verifies the signature, logs failures, and dispatches a
- * LeadMailWebhookReceived event for custom handling.
+ * provider. Verifies the signatures (and, with LeadMail's HMAC v1, the
+ * timestamp and that the delivery wasn't handled before), logs failures,
+ * and dispatches a LeadMailWebhookReceived event for custom handling.
  */
 class LeadMailWebhookController
 {
@@ -36,6 +37,9 @@ class LeadMailWebhookController
         }
 
         event(new LeadMailWebhookReceived($event));
+
+        // Handled: a replay of this delivery within its signature's window is refused.
+        $webhook->markHandled($request);
 
         return response()->noContent();
     }

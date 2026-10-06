@@ -193,7 +193,11 @@ Event::listen(function (LeadMailWebhookReceived $received) {
 ### Customising or replacing the route
 
 - `LEADMAIL_WEBHOOK_ROUTE` — change the path (keep it in sync with the registered URL via `leadmail:install`).
-- Set `leadmail.webhook_route` to `null` to disable auto-registration and handle the request yourself with `LeadMailWebhook::parse($request)` (verifies the signature against the raw body, throws `InvalidWebhookSignatureException` on mismatch; `verify()` returns a boolean instead).
+- Set `leadmail.webhook_route` to `null` to disable auto-registration and handle the request yourself with `LeadMailWebhook::parse($request)` (verifies the signature against the raw body, throws `InvalidWebhookSignatureException` on mismatch; `verify()` returns a boolean instead). Call `$webhook->markHandled($request)` once you have handled it, so a replay is refused.
+
+### Replay protection
+
+leadMail also signs each webhook with a timestamp (`X-LM-Timestamp`, `X-LM-Signature: v1=…`, HMAC-SHA256 with the same webhook secret). When those headers are present the receiver checks them as well: the timestamp must be within 300 seconds of your clock, and a delivery (`X-LeadMail-Delivery`) already handled is refused (remembered in your app's cache for about 11 minutes). Requests without them are checked as before. Once your leadMail sends them, set `LEADMAIL_WEBHOOK_REQUIRE_V1=true` to refuse any request without them. Keep your server's clock in sync (NTP).
 
 ## Multi-Tenancy
 

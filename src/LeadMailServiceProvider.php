@@ -34,7 +34,11 @@ class LeadMailServiceProvider extends ServiceProvider
         });
 
         $this->app->singleton(LeadMailWebhook::class, function () {
-            return new LeadMailWebhook((string) config('leadmail.webhook_secret', ''));
+            return new LeadMailWebhook(
+                (string) config('leadmail.webhook_secret', ''),
+                $this->app->make('cache.store'),
+                (bool) config('leadmail.webhook_require_v1', false),
+            );
         });
     }
 

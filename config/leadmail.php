@@ -81,6 +81,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Require LeadMail's Timestamped Signature
+    |--------------------------------------------------------------------------
+    |
+    | LeadMail signs each webhook with HMAC v1 too (X-LM-Timestamp and
+    | X-LM-Signature): checked whenever present, so a captured request can't
+    | be replayed. Turn this on once your LeadMail sends it to refuse
+    | requests without it (a replay with those headers stripped).
+    |
+    */
+    'webhook_require_v1' => (bool) env('LEADMAIL_WEBHOOK_REQUIRE_V1', false),
+
+    /*
+    |--------------------------------------------------------------------------
     | Webhook Route
     |--------------------------------------------------------------------------
     |
